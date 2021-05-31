@@ -2,7 +2,7 @@
 
 ## 点到点的Data Pipeline
 
-要了解Kafka，我们需要了解Kafka诞生的背景，Linkedin是一个数据驱动的公司（or 产品）。在Kafka诞生之前的开发流程是这样的，举例来说，前端需要用到数据的部门，和后端提供数据的部门，两个部门碰头开会，统一数据格式格式，然后拉通点到点的数据流，数据实时的从数据的生产方到数据消费方，但是问题来了，假如有 $n$ 个生产方，$m$ 个消费方，那么就有了 $m * n$ 个点到点的数据通道，对资源的要求非常高；Linkedin期望建立一个中央式的数据通道，生产方只和中央交互，消费方也只和中央交互。
+要了解Kafka，我们需要了解Kafka诞生的背景，Linkedin是一个数据驱动的公司（or 产品）。在Kafka诞生之前的开发流程是这样的，举例来说，前端需要用到数据的部门，和后端提供数据的部门，两个部门碰头开会，统一数据格式格式，然后拉通点到点的数据流，数据实时的从数据的生产方到数据消费方，但是问题来了，假如有 $n$ 个生产方，$m$ 个消费方，那么就有了 $$m * n$$ 个点到点的数据通道，对资源的要求非常高；Linkedin期望建立一个中央式的数据通道，生产方只和中央交互，消费方也只和中央交互。
 ## 概念
 
 ###  生产与消费
@@ -19,25 +19,11 @@ Pub就是user data的tracking system，比如用户点击了推荐，都会通�
 
 ## Replicas and Layout
 
-12
-Kafka0.8：加入了数据备份
-13
-早期的Kafka是没有备份机制的，在当时的业务场景下，tracking data和log data不需要数据的完整性，即使丢了一些数据没关系；但是对于mission critical的任务来说（比如银行流水），是一条数据都不丢，如果实时运行的时候，一个服务器炸了，数据就永远丢了，
-14
-0.8对topic part进行备份，如果一个broker有3个partition，那就把3个partition发到3个broker上
-15
-如何做数据同步，一个新的数据发到集群上，如何保证replication leader发布到follower上
-16
-19
-假定broker1是整个cluster的controller，如果bro1炸了，bro2和3就会通过zookeeper得到这个消息，然后二者会选举出新的controller，先更新ISR，先踢出1，然后告诉3，2成为新的leader，然后3就行会从2备份新的数据，3根据2补数据，补充完成之后再加入ISR
-30
-2012kafka可靠性得到了保障，kafka开始推广
+Kafka0.8版本加入了数据备份，早期的Kafka是没有备份机制的，在当时的业务场景下，tracking data和log data不需要数据的完整性，即使丢失了一些数据没关系；但是对于mission critical的任务来说（比如银行流水），是一条数据都不丢的，在当时的情况下，如果业务服务在实时运行的时候，一个服务器炸了，数据就永远丢了，Kafka 0.8对topic part进行备份，如果一个broker有3个partition，那就把3个partition发到3个broker上。具体的过程是，假设broker1是整个cluster的controller，如果broker1炸了，broker2和broker3就会通过zookeeper得到这个消息，然后二者会选举出新的controller，先更新ISR，先踢出broker1，然后告诉broker3，broker2成为新的leader，然后broker3就行会从broker2备份新的数据，broker3根据broker2补数据，补充完成之后再加入ISR。这样的话，从2012年开始，kafka的可靠性得到了保障，开始大面积推广。
 
-0.9。0 
+## quota和security
 
-加入了quota和security，多租户的kaffa，多个应用进行生产和消费，如果一个客户端发布了很多的DOS攻击，会使得kafka效率很低，每秒发上千请求，kafka就没有更多资源来处理别的请求
-36
-0.9.0把kafka打造为了多租户的系统，kafka会给每个用户分配网络的吞吐量，定义每秒发布或者消费的量，如果配额超出，就会对你进行延迟，
+Kafka0.9版本，加入了quota和security机制。Kafka是一个多租户的系统，即有多个应用进行生产和消费，假设一个客户端发布了很多的DOS攻击，会使得kafka效率很低，如果每秒发上千请求，kafka就没有更多资源来处理别的请求。基于上述背景，0.9.0版本把kafka打造为了多租户的系统，Kafka会给每个用户分配网络的吞吐量，定义每秒发布或者消费的量，如果配额超出，就会对你进行延迟，
 37
 安全机制指的是认证、授权、加密，敏感的topic只有特定用户才能读写或删除
 38
